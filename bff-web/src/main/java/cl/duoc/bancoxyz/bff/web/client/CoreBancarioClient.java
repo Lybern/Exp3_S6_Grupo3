@@ -46,20 +46,24 @@ public class CoreBancarioClient {
 
     @CircuitBreaker(name = "coreServiceCB", fallbackMethod = "obtenerCuentaPorIdFallback")
     public Map<String, Object> obtenerCuentaPorId(Long cuentaId) {
-        String serviceToken = getServiceToken();
-        log.info("[BFF-WEB-CLIENT] Consultando cuenta {} en Core ({}) con Service Token", cuentaId, coreUrl);
+        try {
+            String serviceToken = getServiceToken();
+            log.info("[BFF-WEB-CLIENT] Consultando cuenta {} en Core ({}) con Service Token", cuentaId, coreUrl);
 
-        HttpHeaders headers = new HttpHeaders();
-        headers.setBearerAuth(serviceToken);
-        HttpEntity<Void> requestEntity = new HttpEntity<>(headers);
+            HttpHeaders headers = new HttpHeaders();
+            headers.setBearerAuth(serviceToken);
+            HttpEntity<Void> requestEntity = new HttpEntity<>(headers);
 
-        ResponseEntity<Map<String, Object>> response = restTemplate.exchange(
-                coreUrl + "/cuentas/" + cuentaId,
-                HttpMethod.GET,
-                requestEntity,
-                new ParameterizedTypeReference<Map<String, Object>>() {}
-        );
-        return response.getBody();
+            ResponseEntity<Map<String, Object>> response = restTemplate.exchange(
+                    coreUrl + "/cuentas/" + cuentaId,
+                    HttpMethod.GET,
+                    requestEntity,
+                    new ParameterizedTypeReference<Map<String, Object>>() {}
+            );
+            return response.getBody();
+        } catch (Exception e) {
+            return obtenerCuentaPorIdFallback(cuentaId, e);
+        }
     }
 
     public Map<String, Object> obtenerCuentaPorIdFallback(Long cuentaId, Throwable t) {
@@ -67,7 +71,7 @@ public class CoreBancarioClient {
         return Map.of(
                 "id", cuentaId,
                 "numeroCuenta", "FALLBACK-" + cuentaId,
-                "tipoCuenta", "CUENTA_CORRIENTE",
+                "tipoCuenta", "ahorro",
                 "saldoContable", 0L,
                 "lineaSobregiro", 0L,
                 "tasaInteresAnual", 0.0,
@@ -80,19 +84,23 @@ public class CoreBancarioClient {
 
     @CircuitBreaker(name = "coreServiceCB", fallbackMethod = "obtenerTodasLasCuentasFallback")
     public List<Map<String, Object>> obtenerTodasLasCuentas() {
-        String serviceToken = getServiceToken();
+        try {
+            String serviceToken = getServiceToken();
 
-        HttpHeaders headers = new HttpHeaders();
-        headers.setBearerAuth(serviceToken);
-        HttpEntity<Void> requestEntity = new HttpEntity<>(headers);
+            HttpHeaders headers = new HttpHeaders();
+            headers.setBearerAuth(serviceToken);
+            HttpEntity<Void> requestEntity = new HttpEntity<>(headers);
 
-        ResponseEntity<List<Map<String, Object>>> response = restTemplate.exchange(
-                coreUrl + "/cuentas/todas",
-                HttpMethod.GET,
-                requestEntity,
-                new ParameterizedTypeReference<List<Map<String, Object>>>() {}
-        );
-        return response.getBody();
+            ResponseEntity<List<Map<String, Object>>> response = restTemplate.exchange(
+                    coreUrl + "/cuentas/todas",
+                    HttpMethod.GET,
+                    requestEntity,
+                    new ParameterizedTypeReference<List<Map<String, Object>>>() {}
+            );
+            return response.getBody();
+        } catch (Exception e) {
+            return obtenerTodasLasCuentasFallback(e);
+        }
     }
 
     public List<Map<String, Object>> obtenerTodasLasCuentasFallback(Throwable t) {
@@ -102,19 +110,23 @@ public class CoreBancarioClient {
 
     @CircuitBreaker(name = "coreServiceCB", fallbackMethod = "obtenerTransaccionesPorCuentaFallback")
     public List<TransaccionWebDto> obtenerTransaccionesPorCuenta(Long cuentaId) {
-        String serviceToken = getServiceToken();
+        try {
+            String serviceToken = getServiceToken();
 
-        HttpHeaders headers = new HttpHeaders();
-        headers.setBearerAuth(serviceToken);
-        HttpEntity<Void> requestEntity = new HttpEntity<>(headers);
+            HttpHeaders headers = new HttpHeaders();
+            headers.setBearerAuth(serviceToken);
+            HttpEntity<Void> requestEntity = new HttpEntity<>(headers);
 
-        ResponseEntity<List<TransaccionWebDto>> response = restTemplate.exchange(
-                coreUrl + "/cuentas/" + cuentaId + "/transacciones",
-                HttpMethod.GET,
-                requestEntity,
-                new ParameterizedTypeReference<List<TransaccionWebDto>>() {}
-        );
-        return response.getBody();
+            ResponseEntity<List<TransaccionWebDto>> response = restTemplate.exchange(
+                    coreUrl + "/cuentas/" + cuentaId + "/transacciones",
+                    HttpMethod.GET,
+                    requestEntity,
+                    new ParameterizedTypeReference<List<TransaccionWebDto>>() {}
+            );
+            return response.getBody();
+        } catch (Exception e) {
+            return obtenerTransaccionesPorCuentaFallback(cuentaId, e);
+        }
     }
 
     public List<TransaccionWebDto> obtenerTransaccionesPorCuentaFallback(Long cuentaId, Throwable t) {
@@ -124,19 +136,23 @@ public class CoreBancarioClient {
 
     @CircuitBreaker(name = "coreServiceCB", fallbackMethod = "obtenerMovimientosAnualesPorCuentaFallback")
     public List<Map<String, Object>> obtenerMovimientosAnualesPorCuenta(Long cuentaId) {
-        String serviceToken = getServiceToken();
+        try {
+            String serviceToken = getServiceToken();
 
-        HttpHeaders headers = new HttpHeaders();
-        headers.setBearerAuth(serviceToken);
-        HttpEntity<Void> requestEntity = new HttpEntity<>(headers);
+            HttpHeaders headers = new HttpHeaders();
+            headers.setBearerAuth(serviceToken);
+            HttpEntity<Void> requestEntity = new HttpEntity<>(headers);
 
-        ResponseEntity<List<Map<String, Object>>> response = restTemplate.exchange(
-                coreUrl + "/cuentas/" + cuentaId + "/anuales",
-                HttpMethod.GET,
-                requestEntity,
-                new ParameterizedTypeReference<List<Map<String, Object>>>() {}
-        );
-        return response.getBody();
+            ResponseEntity<List<Map<String, Object>>> response = restTemplate.exchange(
+                    coreUrl + "/cuentas/" + cuentaId + "/anuales",
+                    HttpMethod.GET,
+                    requestEntity,
+                    new ParameterizedTypeReference<List<Map<String, Object>>>() {}
+            );
+            return response.getBody();
+        } catch (Exception e) {
+            return obtenerMovimientosAnualesPorCuentaFallback(cuentaId, e);
+        }
     }
 
     public List<Map<String, Object>> obtenerMovimientosAnualesPorCuentaFallback(Long cuentaId, Throwable t) {

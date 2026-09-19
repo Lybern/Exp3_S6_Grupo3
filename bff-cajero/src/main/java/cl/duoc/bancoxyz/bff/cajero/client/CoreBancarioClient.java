@@ -44,20 +44,24 @@ public class CoreBancarioClient {
 
     @CircuitBreaker(name = "coreServiceCB", fallbackMethod = "obtenerCuentaPorIdFallback")
     public Map<String, Object> obtenerCuentaPorId(Long cuentaId) {
-        String serviceToken = getServiceToken();
-        log.info("[BFF-CAJERO-CLIENT] Consultando saldo de cuenta {} en Core ({})", cuentaId, coreUrl);
+        try {
+            String serviceToken = getServiceToken();
+            log.info("[BFF-CAJERO-CLIENT] Consultando saldo de cuenta {} en Core ({})", cuentaId, coreUrl);
 
-        HttpHeaders headers = new HttpHeaders();
-        headers.setBearerAuth(serviceToken);
-        HttpEntity<Void> requestEntity = new HttpEntity<>(headers);
+            HttpHeaders headers = new HttpHeaders();
+            headers.setBearerAuth(serviceToken);
+            HttpEntity<Void> requestEntity = new HttpEntity<>(headers);
 
-        ResponseEntity<Map<String, Object>> response = restTemplate.exchange(
-                coreUrl + "/cuentas/" + cuentaId,
-                HttpMethod.GET,
-                requestEntity,
-                new ParameterizedTypeReference<Map<String, Object>>() {}
-        );
-        return response.getBody();
+            ResponseEntity<Map<String, Object>> response = restTemplate.exchange(
+                    coreUrl + "/cuentas/" + cuentaId,
+                    HttpMethod.GET,
+                    requestEntity,
+                    new ParameterizedTypeReference<Map<String, Object>>() {}
+            );
+            return response.getBody();
+        } catch (Exception e) {
+            return obtenerCuentaPorIdFallback(cuentaId, e);
+        }
     }
 
     public Map<String, Object> obtenerCuentaPorIdFallback(Long cuentaId, Throwable t) {
@@ -76,26 +80,30 @@ public class CoreBancarioClient {
 
     @CircuitBreaker(name = "coreServiceCB", fallbackMethod = "ejecutarRetiroFallback")
     public Map<String, Object> ejecutarRetiro(Long cuentaId, Long monto, String terminalId) {
-        String serviceToken = getServiceToken();
+        try {
+            String serviceToken = getServiceToken();
 
-        HttpHeaders headers = new HttpHeaders();
-        headers.setBearerAuth(serviceToken);
-        headers.setContentType(MediaType.APPLICATION_JSON);
+            HttpHeaders headers = new HttpHeaders();
+            headers.setBearerAuth(serviceToken);
+            headers.setContentType(MediaType.APPLICATION_JSON);
 
-        Map<String, Object> body = Map.of(
-                "cuentaId", cuentaId,
-                "monto", monto,
-                "canal", "ATM-" + terminalId
-        );
-        HttpEntity<Map<String, Object>> requestEntity = new HttpEntity<>(body, headers);
+            Map<String, Object> body = Map.of(
+                    "cuentaId", cuentaId,
+                    "monto", monto,
+                    "canal", "ATM-" + terminalId
+            );
+            HttpEntity<Map<String, Object>> requestEntity = new HttpEntity<>(body, headers);
 
-        ResponseEntity<Map<String, Object>> response = restTemplate.exchange(
-                coreUrl + "/operaciones/retiro",
-                HttpMethod.POST,
-                requestEntity,
-                new ParameterizedTypeReference<Map<String, Object>>() {}
-        );
-        return response.getBody();
+            ResponseEntity<Map<String, Object>> response = restTemplate.exchange(
+                    coreUrl + "/operaciones/retiro",
+                    HttpMethod.POST,
+                    requestEntity,
+                    new ParameterizedTypeReference<Map<String, Object>>() {}
+            );
+            return response.getBody();
+        } catch (Exception e) {
+            return ejecutarRetiroFallback(cuentaId, monto, terminalId, e);
+        }
     }
 
     public Map<String, Object> ejecutarRetiroFallback(Long cuentaId, Long monto, String terminalId, Throwable t) {
