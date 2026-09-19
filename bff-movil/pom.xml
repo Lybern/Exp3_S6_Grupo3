@@ -74,12 +74,6 @@
 			<artifactId>spring-cloud-starter-circuitbreaker-resilience4j</artifactId>
 		</dependency>
 
-		<!-- AOP para que funcionen las anotaciones @CircuitBreaker -->
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-aop</artifactId>
-		</dependency>
-
 		<!-- Actuator para metricas y monitoreo de estado del circuito -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
