@@ -5,12 +5,14 @@ import cl.duoc.bancoxyz.bff.web.security.JwtTokenUtil;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.*;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
-import org.springframework.web.client.RestClient;
+import org.springframework.web.client.RestTemplate;
 
 import java.util.Collections;
 import java.util.List;
@@ -20,11 +22,14 @@ import java.util.Map;
 public class CoreBancarioClient {
 
     private static final Logger log = LoggerFactory.getLogger(CoreBancarioClient.class);
-    private final RestClient coreRestClient;
+    private final RestTemplate restTemplate;
     private final JwtTokenUtil jwtTokenUtil;
 
-    public CoreBancarioClient(RestClient coreRestClient, JwtTokenUtil jwtTokenUtil) {
-        this.coreRestClient = coreRestClient;
+    @Value("${bank.core.url:http://core-service/api/core}")
+    private String coreUrl;
+
+    public CoreBancarioClient(RestTemplate restTemplate, JwtTokenUtil jwtTokenUtil) {
+        this.restTemplate = restTemplate;
         this.jwtTokenUtil = jwtTokenUtil;
     }
 
@@ -42,13 +47,19 @@ public class CoreBancarioClient {
     @CircuitBreaker(name = "coreServiceCB", fallbackMethod = "obtenerCuentaPorIdFallback")
     public Map<String, Object> obtenerCuentaPorId(Long cuentaId) {
         String serviceToken = getServiceToken();
-        log.info("[BFF-WEB-CLIENT] Consultando cuenta {} en Core con Service Token", cuentaId);
+        log.info("[BFF-WEB-CLIENT] Consultando cuenta {} en Core ({}) con Service Token", cuentaId, coreUrl);
 
-        return coreRestClient.get()
-                .uri("/cuentas/{id}", cuentaId)
-                .header("Authorization", "Bearer " + serviceToken)
-                .retrieve()
-                .body(new ParameterizedTypeReference<Map<String, Object>>() {});
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBearerAuth(serviceToken);
+        HttpEntity<Void> requestEntity = new HttpEntity<>(headers);
+
+        ResponseEntity<Map<String, Object>> response = restTemplate.exchange(
+                coreUrl + "/cuentas/" + cuentaId,
+                HttpMethod.GET,
+                requestEntity,
+                new ParameterizedTypeReference<Map<String, Object>>() {}
+        );
+        return response.getBody();
     }
 
     public Map<String, Object> obtenerCuentaPorIdFallback(Long cuentaId, Throwable t) {
@@ -71,11 +82,17 @@ public class CoreBancarioClient {
     public List<Map<String, Object>> obtenerTodasLasCuentas() {
         String serviceToken = getServiceToken();
 
-        return coreRestClient.get()
-                .uri("/cuentas/todas")
-                .header("Authorization", "Bearer " + serviceToken)
-                .retrieve()
-                .body(new ParameterizedTypeReference<List<Map<String, Object>>>() {});
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBearerAuth(serviceToken);
+        HttpEntity<Void> requestEntity = new HttpEntity<>(headers);
+
+        ResponseEntity<List<Map<String, Object>>> response = restTemplate.exchange(
+                coreUrl + "/cuentas/todas",
+                HttpMethod.GET,
+                requestEntity,
+                new ParameterizedTypeReference<List<Map<String, Object>>>() {}
+        );
+        return response.getBody();
     }
 
     public List<Map<String, Object>> obtenerTodasLasCuentasFallback(Throwable t) {
@@ -87,11 +104,17 @@ public class CoreBancarioClient {
     public List<TransaccionWebDto> obtenerTransaccionesPorCuenta(Long cuentaId) {
         String serviceToken = getServiceToken();
 
-        return coreRestClient.get()
-                .uri("/cuentas/{id}/transacciones", cuentaId)
-                .header("Authorization", "Bearer " + serviceToken)
-                .retrieve()
-                .body(new ParameterizedTypeReference<List<TransaccionWebDto>>() {});
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBearerAuth(serviceToken);
+        HttpEntity<Void> requestEntity = new HttpEntity<>(headers);
+
+        ResponseEntity<List<TransaccionWebDto>> response = restTemplate.exchange(
+                coreUrl + "/cuentas/" + cuentaId + "/transacciones",
+                HttpMethod.GET,
+                requestEntity,
+                new ParameterizedTypeReference<List<TransaccionWebDto>>() {}
+        );
+        return response.getBody();
     }
 
     public List<TransaccionWebDto> obtenerTransaccionesPorCuentaFallback(Long cuentaId, Throwable t) {
@@ -103,11 +126,17 @@ public class CoreBancarioClient {
     public List<Map<String, Object>> obtenerMovimientosAnualesPorCuenta(Long cuentaId) {
         String serviceToken = getServiceToken();
 
-        return coreRestClient.get()
-                .uri("/cuentas/{id}/anuales", cuentaId)
-                .header("Authorization", "Bearer " + serviceToken)
-                .retrieve()
-                .body(new ParameterizedTypeReference<List<Map<String, Object>>>() {});
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBearerAuth(serviceToken);
+        HttpEntity<Void> requestEntity = new HttpEntity<>(headers);
+
+        ResponseEntity<List<Map<String, Object>>> response = restTemplate.exchange(
+                coreUrl + "/cuentas/" + cuentaId + "/anuales",
+                HttpMethod.GET,
+                requestEntity,
+                new ParameterizedTypeReference<List<Map<String, Object>>>() {}
+        );
+        return response.getBody();
     }
 
     public List<Map<String, Object>> obtenerMovimientosAnualesPorCuentaFallback(Long cuentaId, Throwable t) {

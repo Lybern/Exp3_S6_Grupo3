@@ -21,8 +21,9 @@ public class RestClientConfig {
 
     @Bean
     public RestClient coreRestClient(RestTemplate loadBalancedRestTemplate) {
-        return RestClient.builder(loadBalancedRestTemplate)
+        return RestClient.builder()
                 .baseUrl(coreUrl)
+                .requestInterceptors(interceptors -> interceptors.addAll(loadBalancedRestTemplate.getInterceptors()))
                 .build();
     }
 }
