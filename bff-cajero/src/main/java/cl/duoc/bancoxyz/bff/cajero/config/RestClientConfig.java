@@ -5,6 +5,7 @@ import org.springframework.cloud.client.loadbalancer.LoadBalanced;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.client.RestClient;
+import org.springframework.web.client.RestTemplate;
 
 @Configuration
 public class RestClientConfig {
@@ -14,13 +15,13 @@ public class RestClientConfig {
 
     @Bean
     @LoadBalanced
-    public RestClient.Builder loadBalancedRestClientBuilder() {
-        return RestClient.builder();
+    public RestTemplate loadBalancedRestTemplate() {
+        return new RestTemplate();
     }
 
     @Bean
-    public RestClient coreRestClient(RestClient.Builder loadBalancedRestClientBuilder) {
-        return loadBalancedRestClientBuilder
+    public RestClient coreRestClient(RestTemplate loadBalancedRestTemplate) {
+        return RestClient.builder(loadBalancedRestTemplate)
                 .baseUrl(coreUrl)
                 .build();
     }
