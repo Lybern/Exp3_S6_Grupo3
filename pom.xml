@@ -17,6 +17,8 @@
 	<description>Arquitectura Backend for Frontend (BFF) Multi-Módulo con Seguridad Integral - Banco XYZ</description>
 
 	<modules>
+		<module>config-server</module>
+		<module>discovery-server</module>
 		<module>core-service</module>
 		<module>bff-movil</module>
 		<module>bff-web</module>
