@@ -131,71 +131,67 @@ Es fundamental iniciar los componentes en el siguiente orden secuencial:
 
 ## 6. Pruebas y Verificación de Endpoints
 
-### A. Verificación de Config Server y Eureka
-```bash
-# Consultar propiedades de bff-movil desde Config Server
-curl -u admin:gato http://localhost:8888/bff-movil/default
+Las pruebas de integración y verificación funcional se realizan a través de **Postman** o **cURL**, consumiendo las APIs REST expuestas por cada microservicio.
 
-# Consultar aplicaciones registradas en Eureka
-curl -u eureka:eureka2026 -H "Accept: application/json" http://localhost:8761/eureka/apps
-```
+### A. Matriz de Endpoints para Pruebas
 
-### B. Pruebas en BFF Móvil (HTTPS 8443)
-```powershell
-# 1. Login y obtención de JWT
-[System.Net.ServicePointManager]::ServerCertificateValidationCallback = {$true}
-$login = Invoke-RestMethod -Uri 'https://localhost:8443/api/auth/login' -Method Post -Body '{"username":"usuario_movil","password":"movil123"}' -ContentType 'application/json'
-$headers = @{ Authorization = 'Bearer ' + $login.token }
+| Canal / Servicio | Método | Endpoint | Descripción | Autenticación |
+| :--- | :---: | :--- | :--- | :--- |
+| **Config Server** | `GET` | `/core-service/default` | Obtener propiedades centralizadas del microservicio | Basic Auth |
+| **Discovery Server** | `GET` | `/eureka/apps` | Listar microservicios registrados en Eureka | Basic Auth |
+| **BFF Móvil** | `POST` | `/api/auth/login` | Autenticación de usuario móvil y emisión de JWT | Pública |
+| **BFF Móvil** | `GET` | `/api/v1/movil/cuentas/{id}` | Resumen ligero de cuenta y movimientos | Bearer Token (`MOVIL`) |
+| **BFF Móvil** | `POST` | `/api/v1/movil/cuentas/{id}/transferencia` | Transferencia electrónica de fondos | Bearer Token (`MOVIL`) |
+| **BFF Web** | `POST` | `/api/auth/login` | Autenticación de usuario web y emisión de JWT | Pública |
+| **BFF Web** | `GET` | `/api/v1/web/cuentas/{id}` | Detalle financiero anual con cálculo de intereses | Bearer Token (`WEB`) |
+| **BFF Cajero ATM** | `POST` | `/api/auth/login` | Autenticación de terminal cajero y emisión de JWT | Pública |
+| **BFF Cajero ATM** | `GET` | `/api/v1/cajero/cuentas/{id}/saldo` | Consulta de saldo disponible para dispensación | Bearer Token (`ATM`) |
+| **BFF Cajero ATM** | `POST` | `/api/v1/cajero/cuentas/{id}/retiro` | Retiro de efectivo (múltiplos de $5.000) | Bearer Token (`ATM`) |
 
-# 2. Consultar Resumen Ligero de Cuenta 108
-Invoke-RestMethod -Uri 'https://localhost:8443/api/v1/movil/cuentas/108' -Method Get -Headers $headers
+---
 
-# 3. Realizar Transferencia Móvil
-$tx = '{"cuentaDestinoId":113,"monto":1000,"comentario":"Pago almuerzo"}'
-Invoke-RestMethod -Uri 'https://localhost:8443/api/v1/movil/cuentas/108/transferencia' -Method Post -Body $tx -ContentType 'application/json' -Headers $headers
-```
+### B. Especificación de Pruebas
 
-### C. Pruebas en BFF Web (HTTPS 8444)
-```powershell
-# 1. Login y obtención de JWT Web
-$loginWeb = Invoke-RestMethod -Uri 'https://localhost:8444/api/auth/login' -Method Post -Body '{"username":"usuario_web","password":"web123"}' -ContentType 'application/json'
-$headersWeb = @{ Authorization = 'Bearer ' + $loginWeb.token }
+#### 1. Verificación de Infraestructura (Config Server y Eureka)
+* **Config Server (Puerto 8888):**
+  ```bash
+  curl -u <usuario>:<contraseña> http://localhost:8888/core-service/default
+  ```
+* **Discovery Server (Puerto 8761):**
+  ```bash
+  curl -u <usuario>:<contraseña> -H "Accept: application/json" http://localhost:8761/eureka/apps
+  ```
 
-# 2. Consultar Detalle Web Completo de Cuenta 106
-Invoke-RestMethod -Uri 'https://localhost:8444/api/v1/web/cuentas/106' -Method Get -Headers $headersWeb
-```
+#### 2. Autenticación de Clientes (Login)
+* **Endpoint:** `POST https://localhost:8443/api/auth/login`
+* **Payload:**
+  ```json
+  {
+    "username": "<usuario_canal>",
+    "password": "<credencial>"
+  }
+  ```
+* **Respuesta Esperada (`200 OK`):** Retorna el token JWT firmado con el rol y la audiencia correspondiente al canal.
 
-### D. Pruebas en BFF Cajero ATM (HTTPS 8445)
-```powershell
-# 1. Login Cajero ATM
-$loginAtm = Invoke-RestMethod -Uri 'https://localhost:8445/api/auth/login' -Method Post -Body '{"username":"operador_atm","password":"atm123"}' -ContentType 'application/json'
-$headersAtm = @{ Authorization = 'Bearer ' + $loginAtm.token }
+#### 3. Consumo de Negocio y Resolución Balanceada
+* **Endpoint:** `GET https://localhost:8443/api/v1/movil/cuentas/106`
+* **Cabecera:** `Authorization: Bearer <TOKEN_JWT>`
+* **Comportamiento:** El BFF descubre `http://core-service` dinámicamente mediante Eureka y retorna los datos contables del titular.
 
-# 2. Consultar Saldo en Cajero
-Invoke-RestMethod -Uri 'https://localhost:8445/api/v1/cajero/cuentas/106/saldo' -Method Get -Headers $headersAtm
-
-# 3. Realizar Giro en Efectivo (PIN 4 dígitos)
-$giro = '{"monto":5000,"pin":"1234","terminalId":"ATM-001"}'
-Invoke-RestMethod -Uri 'https://localhost:8445/api/v1/cajero/cuentas/106/retiro' -Method Post -Body $giro -ContentType 'application/json' -Headers $headersAtm
-```
-
-### E. Prueba de Resiliencia / Circuit Breaker (Core Service Offline)
-Si se detiene `core-service`, los BFFs activan automáticamente sus fallbacks:
-```powershell
-# Consulta de cuenta bajo caída de Core -> Retorna Modo Degradado
-Invoke-RestMethod -Uri 'https://localhost:8443/api/v1/movil/cuentas/106' -Method Get -Headers $headers
-```
-**Respuesta:**
-```json
-{
-  "cuentaId": 106,
-  "nombreTitular": "Usuario Móvil (Modo Degradado)",
-  "tipoCuenta": "ahorro",
-  "saldoDisponible": 0,
-  "ultimosMovimientos": [],
-  "canal": "MOVIL"
-}
-```
+#### 4. Tolerancia a Fallos / Circuit Breaker (Resiliencia)
+* **Escenario:** Detener el servicio central `core-service`.
+* **Endpoint:** `GET https://localhost:8443/api/v1/movil/cuentas/106`
+* **Respuesta Esperada (`200 OK` - Modo Degradado):** El Circuit Breaker intercepta la indisponibilidad del servicio central y activa el método fallback sin retornar error 500:
+  ```json
+  {
+    "cuentaId": 106,
+    "nombreTitular": "Usuario Móvil (Modo Degradado)",
+    "tipoCuenta": "ahorro",
+    "saldoDisponible": 0,
+    "ultimosMovimientos": [],
+    "canal": "MOVIL"
+  }
+  ```
 
 ---
 
