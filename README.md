@@ -1,4 +1,4 @@
-# Banco XYZ - Arquitectura de Microservicios Distribuida con Spring Cloud y BFFs Resilientes
+# Banco XYZ - Arquitectura de Microservicios Distribuida con Spring Cloud. Implementación de Config Server, Eureka y BFFs resilientes
 ### Asignatura: Desarrollo Backend III (PBY2203) - Experiencia 3 / Semana 6
 **Grupo:** Grupo 3  
 **Integrantes:** Leonardo Bustamante - Carolina Delgado Sapunar  
