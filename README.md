@@ -111,7 +111,6 @@ Es fundamental iniciar los componentes en el siguiente orden secuencial:
    ```bash
    ./mvnw -pl config-server spring-boot:run
    ```
-   *Verificación:* `curl -u admin:gato http://localhost:8888/core-service/default`
 
 2. **Terminal 2 - Iniciar Discovery Server Eureka (Puerto 8761):**
    ```bash
@@ -141,59 +140,64 @@ Es fundamental iniciar los componentes en el siguiente orden secuencial:
 
 ---
 
-## 6. Pruebas y Verificación de Endpoints
+## 6. Pruebas y Verificación de Endpoints en Postman
 
-Las pruebas de integración y verificación funcional se realizan a través de **Postman** o **cURL**, consumiendo las APIs REST expuestas por cada microservicio.
+Las pruebas de integración y verificación funcional se realizan a través de **Postman** (y navegador web para dashboards), consumiendo las APIs REST expuestas por cada microservicio.
 
 ### A. Matriz de Endpoints para Pruebas
 
-| Canal / Servicio | Método | Endpoint | Descripción | Autenticación |
+| Canal / Servicio | Método | Endpoint | Descripción | Autenticación en Postman |
 | :--- | :---: | :--- | :--- | :--- |
-| **Config Server** | `GET` | `/core-service/default` | Obtener propiedades centralizadas del microservicio | Basic Auth |
-| **Discovery Server** | `GET` | `/eureka/apps` | Listar microservicios registrados en Eureka | Basic Auth |
-| **BFF Móvil** | `POST` | `/api/auth/login` | Autenticación de usuario móvil y emisión de JWT | Pública |
-| **BFF Móvil** | `GET` | `/api/v1/movil/cuentas/{id}` | Resumen ligero de cuenta y movimientos | Bearer Token (`MOVIL`) |
-| **BFF Móvil** | `POST` | `/api/v1/movil/cuentas/{id}/transferencia` | Transferencia electrónica de fondos | Bearer Token (`MOVIL`) |
-| **BFF Web** | `POST` | `/api/auth/login` | Autenticación de usuario web y emisión de JWT | Pública |
-| **BFF Web** | `GET` | `/api/v1/web/cuentas/{id}` | Detalle financiero anual con cálculo de intereses | Bearer Token (`WEB`) |
-| **BFF Cajero ATM** | `POST` | `/api/auth/login` | Autenticación de terminal cajero y emisión de JWT | Pública |
-| **BFF Cajero ATM** | `GET` | `/api/v1/cajero/cuentas/{id}/saldo` | Consulta de saldo disponible para dispensación | Bearer Token (`ATM`) |
-| **BFF Cajero ATM** | `POST` | `/api/v1/cajero/cuentas/{id}/retiro` | Retiro de efectivo (múltiplos de $5.000) | Bearer Token (`ATM`) |
+| **Config Server** | `GET` | `/core-service/default` | Obtener propiedades centralizadas del microservicio | Basic Auth (`admin`/`gato`) |
+| **Discovery Server** | `GET` | `/eureka/apps` | Consultar microservicios registrados en Eureka | Basic Auth (`eureka`/`eureka2026`) |
+| **BFF Móvil** | `POST` | `/api/auth/login` | Autenticación de usuario móvil y emisión de JWT | Body JSON (Pública) |
+| **BFF Móvil** | `GET` | `/api/v1/movil/cuentas/{id}` | Resumen ligero de cuenta y movimientos | Bearer Token (`aud: MOVIL`) |
+| **BFF Móvil** | `POST` | `/api/v1/movil/cuentas/{id}/transferencia` | Transferencia electrónica de fondos | Bearer Token (`aud: MOVIL`) |
+| **BFF Web** | `POST` | `/api/auth/login` | Autenticación de usuario web y emisión de JWT | Body JSON (Pública) |
+| **BFF Web** | `GET` | `/api/v1/web/cuentas/{id}` | Detalle financiero anual con cálculo de intereses | Bearer Token (`aud: WEB`) |
+| **BFF Cajero ATM** | `POST` | `/api/auth/login` | Autenticación de terminal cajero y emisión de JWT | Body JSON (Pública) |
+| **BFF Cajero ATM** | `GET` | `/api/v1/cajero/cuentas/{id}/saldo` | Consulta de saldo disponible para dispensación | Bearer Token (`aud: ATM`) |
+| **BFF Cajero ATM** | `POST` | `/api/v1/cajero/cuentas/{id}/retiro` | Retiro de efectivo (múltiplos de $5.000) | Bearer Token (`aud: ATM`) |
 
 ---
 
-### B. Especificación de Pruebas
+### B. Especificación de Pruebas Paso a Paso en Postman
 
 #### 1. Verificación de Infraestructura (Config Server y Eureka)
 * **Config Server (Puerto 8888):**
-  ```bash
-  curl -u <usuario>:<contraseña> http://localhost:8888/core-service/default
-  ```
+  * **Método:** `GET` | **URL:** `http://localhost:8888/core-service/default` (o `/bff-movil/default`)
+  * **Pestaña Authorization:** Type *Basic Auth* (Username: `admin` / Password: `gato`).
+  * **Respuesta Esperada (`200 OK`):** Retorna el JSON con las fuentes de configuración cargadas dinámicamente desde `config-repo/`.
 * **Discovery Server (Puerto 8761):**
-  ```bash
-  curl -u <usuario>:<contraseña> -H "Accept: application/json" http://localhost:8761/eureka/apps
-  ```
+  * **Navegador Web:** Ingresar a [http://localhost:8761](http://localhost:8761) con credenciales `eureka` / `eureka2026`.
+  * **Verificación Visual:** El panel de Eureka lista las 4 aplicaciones registradas en estado `UP` (`BFF-MOVIL`, `BFF-WEB`, `BFF-CAJERO`, `CORE-SERVICE`).
 
-#### 2. Autenticación de Clientes (Login)
-* **Endpoint:** `POST https://localhost:8443/api/auth/login`
-* **Payload:**
+#### 2. Autenticación de Clientes en Postman (Login)
+* **Método:** `POST`
+* **URL:** `https://localhost:8443/api/auth/login` *(o 8444 para Web / 8445 para Cajero)*
+* **Pestaña Body:** Seleccionar `raw` -> `JSON`:
   ```json
   {
-    "username": "<usuario_canal>",
-    "password": "<credencial>"
+    "username": "usuario_movil",
+    "password": "movil123"
   }
   ```
-* **Respuesta Esperada (`200 OK`):** Retorna el token JWT firmado con el rol y la audiencia correspondiente al canal.
+* **Respuesta Esperada (`200 OK`):** Retorna el token JWT emitido, detallando el canal (`MOVIL`), rol (`ROLE_MOVIL`) y tiempo de expiración. Copiar el valor del campo `token`.
 
-#### 3. Consumo de Negocio y Resolución Balanceada
-* **Endpoint:** `GET https://localhost:8443/api/v1/movil/cuentas/106`
-* **Cabecera:** `Authorization: Bearer <TOKEN_JWT>`
-* **Comportamiento:** El BFF descubre `http://core-service` dinámicamente mediante Eureka y retorna los datos contables del titular.
+#### 3. Consumo de Negocio en Operación Normal
+* **Método:** `GET`
+* **URL:** `https://localhost:8443/api/v1/movil/cuentas/106`
+* **Pestaña Headers:**
+  * Key: `Authorization`
+  * Value: `Bearer <TOKEN_JWT>`
+* **Respuesta Esperada (`200 OK`):** El BFF Móvil descubre dinámicamente a `http://core-service` mediante Eureka y retorna los datos contables del titular (`John Doe`), saldo disponible y los 3 últimos movimientos históricos.
 
-#### 4. Tolerancia a Fallos / Circuit Breaker (Resiliencia)
-* **Escenario:** Detener el servicio central `core-service`.
-* **Endpoint:** `GET https://localhost:8443/api/v1/movil/cuentas/106`
-* **Respuesta Esperada (`200 OK` - Modo Degradado):** El Circuit Breaker intercepta la indisponibilidad del servicio central y activa el método fallback sin retornar error 500:
+#### 4. Prueba de Resiliencia y Tolerancia a Fallos (Fallback)
+* **Escenario:** Detener el microservicio central `core-service` en la terminal.
+* **Método:** `GET`
+* **URL:** `https://localhost:8443/api/v1/movil/cuentas/106`
+* **Pestaña Headers:** `Authorization: Bearer <TOKEN_JWT>`
+* **Respuesta Esperada (`200 OK` - Modo Degradado):** El Circuit Breaker (`coreServiceCB`) de Resilience4j intercepta la caída del servicio central y deriva la ejecución al método fallback sin lanzar error 500:
   ```json
   {
     "cuentaId": 106,
