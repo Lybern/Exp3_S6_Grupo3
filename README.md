@@ -1,7 +1,7 @@
 # Banco XYZ - Arquitectura de Microservicios Distribuida con Spring Cloud y BFFs Resilientes
 ### Asignatura: Desarrollo Backend III (PBY2203) - Experiencia 3 / Semana 6
 **Grupo:** Grupo 3  
-**Autora:** Carolina Delgado Sapunar  
+**Integrantes:** Leonardo Bustamante - Carolina Delgado Sapunar  
 **Repositorio GitHub:** [https://github.com/Lybern/Exp3_S6_Grupo3](https://github.com/Lybern/Exp3_S6_Grupo3)
 
 ---
@@ -10,7 +10,7 @@
 
 Este proyecto implementa una arquitectura distribuida de microservicios autónomos y resilientes basada en **Spring Cloud 2025.1.2** y **Java 21** para el **Banco XYZ**. 
 
-El sistema desacopla la lógica de negocio central en un **Core Service** y los canales de interacción mediante el patrón **Backend for Frontend (BFF)** (`bff-movil`, `bff-web`, `bff-cajero`), orquestados por un **Servidor de Configuración Centralizada (Spring Cloud Config Server)** y un **Servidor de Descubrimiento (Netflix Eureka Server)** con soporte de **Balanceo de Carga del Lado del Cliente** y **Tolerancia a Fallos / Circuit Breakers (Resilience4j)**.
+El sistema desacopla la lógica de negocio central en un **Core Service** y los canales de interacción mediante el patrón **Backend for Frontend (BFF)** (`bff-movil`, `bff-web`, `bff-cajero`), orquestados por un **Servidor de Configuración Centralizada (Spring Cloud Config Server)** y un **Servidor de Descubrimiento (Netflix Eureka Server)** con soporte de **Balanceo de Carga del Lado del Cliente** y **Tolerancia a Fallos / Circuit Breakers y Retry (Resilience4j)**.
 
 ```
                                   +-----------------------+
@@ -33,7 +33,7 @@ El sistema desacopla la lógica de negocio central en un **Core Service** y los 
                   +---------------------------+-------------------------+
                                               |
                                               | @LoadBalanced RestTemplate + Eureka
-                                              | Circuit Breaker & Fallback (Resilience4j)
+                                              | Circuit Breaker, Retry & Fallback (Resilience4j)
                                               +-------------------------+
 ```
 
@@ -68,12 +68,16 @@ El sistema desacopla la lógica de negocio central en un **Core Service** y los 
 
 ## 4. Resiliencia y Tolerancia a Fallos (Resilience4j)
 
-Cada BFF (`bff-movil`, `bff-web`, `bff-cajero`) cuenta con una instancia de **Circuit Breaker** (`coreServiceCB`) configurada en el repositorio central de configuración:
+Cada BFF (`bff-movil`, `bff-web`, `bff-cajero`) cuenta con una instancia combinada de **Circuit Breaker** y **Retry** (`coreServiceCB`) configurada en el repositorio central de configuración:
 
-* **Ventana Deslizante (`slidingWindowSize`):** 10 llamadas.
-* **Umbral de Fallos (`failureRateThreshold`):** 50%.
-* **Tiempo en Estado Abierto (`waitDurationInOpenState`):** 10.000 ms (10 segundos).
-* **Llamadas de Prueba en Half-Open (`permittedNumberOfCallsInHalfOpenState`):** 3 llamadas.
+* **Circuit Breaker:**
+  * **Ventana Deslizante (`slidingWindowSize`):** 10 llamadas.
+  * **Umbral de Fallos (`failureRateThreshold`):** 50%.
+  * **Tiempo en Estado Abierto (`waitDurationInOpenState`):** 10.000 ms (10 segundos).
+  * **Llamadas de Prueba en Half-Open (`permittedNumberOfCallsInHalfOpenState`):** 3 llamadas.
+* **Retry (Reintentos automáticos ante fallas transitorias):**
+  * **Intentos Máximos (`maxAttempts`):** 3 llamadas.
+  * **Tiempo de Espera (`waitDuration`):** 1.000 ms (1 segundo) entre intentos.
 * **Comportamiento Degradado (Fallback):**
   * Si el `core-service` no está disponible o el circuito está **OPEN**, los BFFs devuelven una respuesta estructurada con estado `"DEGRADADO_FALLBACK"` o mensaje de contingencia sin propagar errores `500 Internal Server Error`.
   * La dispensación física en cajeros rechaza transacciones no confirmadas con `503 Service Unavailable`, manteniendo la integridad monetaria.
