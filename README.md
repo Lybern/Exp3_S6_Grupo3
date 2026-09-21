@@ -6,9 +6,9 @@
 
 ---
 
-## 1. Descripción de la Solución
+## 1. Descripción del proyecto
 
-Este proyecto implementa una arquitectura distribuida de microservicios autónomos y resilientes basada en **Spring Cloud 2025.1.2** y **Java 21** para el **Banco XYZ**. 
+Se implementó una arquitectura distribuida de microservicios autónomos y resilientes basada en **Spring Cloud 2025.1.2** y **Java 21** para el **Banco XYZ**. 
 
 El sistema desacopla la lógica de negocio central en un **Core Service** y los canales de interacción mediante el patrón **Backend for Frontend (BFF)** (`bff-movil`, `bff-web`, `bff-cajero`), orquestados por un **Servidor de Configuración Centralizada (Spring Cloud Config Server)** y un **Servidor de Descubrimiento (Netflix Eureka Server)** con soporte de **Balanceo de Carga del Lado del Cliente** y **Tolerancia a Fallos / Circuit Breakers y Retry (Resilience4j)**.
 
@@ -39,7 +39,7 @@ El sistema desacopla la lógica de negocio central en un **Core Service** y los 
 
 ---
 
-## 2. Mapa de Microservicios y Componentes
+## 2. Arquitectura de microservicios y Componentes
 
 | Microservicio / Servidor | Puerto | Protocolo / Seguridad | Responsabilidad Principal |
 | :--- | :---: | :---: | :--- |
@@ -66,7 +66,7 @@ El sistema desacopla la lógica de negocio central en un **Core Service** y los 
 
 ### Aislamiento de Autorización por Canal (Seguridad Diferenciada)
 
-Cada microservicio BFF aplica control de acceso perimetral e independiente mediante Spring Security y JJWT:
+Cada microservicio BFF aplica control de acceso de autenticación de forma independiente mediante Spring Security y JJWT:
 * **Validación de Audiencia (`aud`) y Rol:** Cada BFF valida criptográficamente que el token recibido corresponda estrictamente a su propio canal (`MOVIL`, `WEB`, `ATM`) y que el usuario posea la autoridad correspondiente (`ROLE_MOVIL`, `ROLE_WEB`, `ROLE_ATM`).
 * **Protección Cruzada (Cross-Channel Isolation):** Un token emitido para un canal específico (ej: `bff-movil`) es rechazado de inmediato con **`HTTP 403 Forbidden`** si se intenta utilizar para acceder a los endpoints de otro canal (`bff-web` o `bff-cajero`).
 * **Bloqueo No Autenticado:** Cualquier consulta a rutas protegidas sin cabecera `Authorization: Bearer <token>` es bloqueada con **`HTTP 403 Forbidden`**.
