@@ -166,10 +166,10 @@ Las pruebas de integración y verificación funcional se realizan a través de *
 #### 1. Verificación de Infraestructura (Config Server y Eureka)
 * **Config Server (Puerto 8888):**
   * **Método:** `GET` | **URL:** `http://localhost:8888/core-service/default` (o `/bff-movil/default`)
-  * **Pestaña Authorization:** Type *Basic Auth* (Username: `admin` / Password: `gato`).
+  * **Pestaña Authorization:** Type *Basic Auth* (Username / Password).
   * **Respuesta Esperada (`200 OK`):** Retorna el JSON con las fuentes de configuración cargadas dinámicamente desde `config-repo/`.
 * **Discovery Server (Puerto 8761):**
-  * **Navegador Web:** Ingresar a [http://localhost:8761](http://localhost:8761) con credenciales `eureka` / `eureka2026`.
+  * **Navegador Web:** Ingresar a [http://localhost:8761](http://localhost:8761) con credenciales.
   * **Verificación Visual:** El panel de Eureka lista las 4 aplicaciones registradas en estado `UP` (`BFF-MOVIL`, `BFF-WEB`, `BFF-CAJERO`, `CORE-SERVICE`).
 
 #### 2. Autenticación de Clientes en Postman (Login)
@@ -178,8 +178,8 @@ Las pruebas de integración y verificación funcional se realizan a través de *
 * **Pestaña Body:** Seleccionar `raw` -> `JSON`:
   ```json
   {
-    "username": "usuario_movil",
-    "password": "movil123"
+    "username": "",
+    "password": ""
   }
   ```
 * **Respuesta Esperada (`200 OK`):** Retorna el token JWT emitido, detallando el canal (`MOVIL`), rol (`ROLE_MOVIL`) y tiempo de expiración. Copiar el valor del campo `token`.
