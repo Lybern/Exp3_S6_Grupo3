@@ -64,6 +64,14 @@ El sistema desacopla la lógica de negocio central en un **Core Service** y los 
 | 🏧 **BFF Cajero ATM (Alt)**| `usuario_cajero` | `cajero123` | `ROLE_ATM` / `aud: ATM` | JWT Bearer Token |
 | 🏢 **Core Bancario (Interno)**| `bff-*-client` | *Delegated Token* | `SERVICE_TOKEN` / `aud: core-bancario` | Service JWT firmado compartido |
 
+### Aislamiento de Autorización por Canal (Seguridad Diferenciada)
+
+Cada microservicio BFF aplica control de acceso perimetral e independiente mediante Spring Security y JJWT:
+* **Validación de Audiencia (`aud`) y Rol:** Cada BFF valida criptográficamente que el token recibido corresponda estrictamente a su propio canal (`MOVIL`, `WEB`, `ATM`) y que el usuario posea la autoridad correspondiente (`ROLE_MOVIL`, `ROLE_WEB`, `ROLE_ATM`).
+* **Protección Cruzada (Cross-Channel Isolation):** Un token emitido para un canal específico (ej: `bff-movil`) es rechazado de inmediato con **`HTTP 403 Forbidden`** si se intenta utilizar para acceder a los endpoints de otro canal (`bff-web` o `bff-cajero`).
+* **Bloqueo No Autenticado:** Cualquier consulta a rutas protegidas sin cabecera `Authorization: Bearer <token>` es bloqueada con **`HTTP 403 Forbidden`**.
+* **Tokens de Servicio Delegados:** La comunicación interna entre los BFFs y el `core-service` utiliza tokens firmados independientes con audiencia `core-bancario` y expiración corta, desacoplando los tokens de los clientes finales del backend central.
+
 ---
 
 ## 4. Resiliencia y Tolerancia a Fallos (Resilience4j)
