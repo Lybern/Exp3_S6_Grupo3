@@ -2,6 +2,7 @@ package cl.duoc.bancoxyz.bff.cajero.client;
 
 import cl.duoc.bancoxyz.bff.cajero.security.JwtTokenUtil;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.retry.annotation.Retry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -43,6 +44,7 @@ public class CoreBancarioClient {
     }
 
     @CircuitBreaker(name = "coreServiceCB", fallbackMethod = "obtenerCuentaPorIdFallback")
+    @Retry(name = "coreServiceCB")
     public Map<String, Object> obtenerCuentaPorId(Long cuentaId) {
         try {
             String serviceToken = getServiceToken();
@@ -79,6 +81,7 @@ public class CoreBancarioClient {
     }
 
     @CircuitBreaker(name = "coreServiceCB", fallbackMethod = "ejecutarRetiroFallback")
+    @Retry(name = "coreServiceCB")
     public Map<String, Object> ejecutarRetiro(Long cuentaId, Long monto, String terminalId) {
         try {
             String serviceToken = getServiceToken();

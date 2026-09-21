@@ -3,6 +3,7 @@ package cl.duoc.bancoxyz.bff.movil.client;
 import cl.duoc.bancoxyz.bff.movil.dto.TransaccionMovilDto;
 import cl.duoc.bancoxyz.bff.movil.security.JwtTokenUtil;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.retry.annotation.Retry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -46,6 +47,7 @@ public class CoreBancarioClient {
     }
 
     @CircuitBreaker(name = "coreServiceCB", fallbackMethod = "obtenerCuentaPorIdFallback")
+    @Retry(name = "coreServiceCB")
     public Map<String, Object> obtenerCuentaPorId(Long cuentaId) {
         try {
             String serviceToken = getServiceToken();
@@ -83,6 +85,7 @@ public class CoreBancarioClient {
     }
 
     @CircuitBreaker(name = "coreServiceCB", fallbackMethod = "obtenerTransaccionesPorCuentaFallback")
+    @Retry(name = "coreServiceCB")
     public List<TransaccionMovilDto> obtenerTransaccionesPorCuenta(Long cuentaId) {
         try {
             String serviceToken = getServiceToken();
@@ -109,6 +112,7 @@ public class CoreBancarioClient {
     }
 
     @CircuitBreaker(name = "coreServiceCB", fallbackMethod = "ejecutarTransferenciaFallback")
+    @Retry(name = "coreServiceCB")
     public void ejecutarTransferencia(Long cuentaOrigenId, Long cuentaDestinoId, Long monto, String comentario) {
         try {
             String serviceToken = getServiceToken();

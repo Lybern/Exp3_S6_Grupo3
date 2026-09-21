@@ -3,6 +3,7 @@ package cl.duoc.bancoxyz.bff.web.client;
 import cl.duoc.bancoxyz.bff.web.dto.TransaccionWebDto;
 import cl.duoc.bancoxyz.bff.web.security.JwtTokenUtil;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.retry.annotation.Retry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -45,6 +46,7 @@ public class CoreBancarioClient {
     }
 
     @CircuitBreaker(name = "coreServiceCB", fallbackMethod = "obtenerCuentaPorIdFallback")
+    @Retry(name = "coreServiceCB")
     public Map<String, Object> obtenerCuentaPorId(Long cuentaId) {
         try {
             String serviceToken = getServiceToken();
@@ -83,6 +85,7 @@ public class CoreBancarioClient {
     }
 
     @CircuitBreaker(name = "coreServiceCB", fallbackMethod = "obtenerTodasLasCuentasFallback")
+    @Retry(name = "coreServiceCB")
     public List<Map<String, Object>> obtenerTodasLasCuentas() {
         try {
             String serviceToken = getServiceToken();
@@ -109,6 +112,7 @@ public class CoreBancarioClient {
     }
 
     @CircuitBreaker(name = "coreServiceCB", fallbackMethod = "obtenerTransaccionesPorCuentaFallback")
+    @Retry(name = "coreServiceCB")
     public List<TransaccionWebDto> obtenerTransaccionesPorCuenta(Long cuentaId) {
         try {
             String serviceToken = getServiceToken();
@@ -135,6 +139,7 @@ public class CoreBancarioClient {
     }
 
     @CircuitBreaker(name = "coreServiceCB", fallbackMethod = "obtenerMovimientosAnualesPorCuentaFallback")
+    @Retry(name = "coreServiceCB")
     public List<Map<String, Object>> obtenerMovimientosAnualesPorCuenta(Long cuentaId) {
         try {
             String serviceToken = getServiceToken();
